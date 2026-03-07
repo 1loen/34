@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loen – Tạo đề thi</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+/* ══ TOKENS ══ */
+:root {
+  --bg: #f0f2f8;
+  --surface: #ffffff;
+  --surface2: #f5f7fc;
+  --border: #e4e8f0;
+  --border2: #cdd3e0;
+  --accent: #2d48a9;
+  --accent-light: #4c66c9;
+  --accent-glow: rgba(45,72,169,0.08);
+  --green: #22c55e;
+  --green-glow: rgba(34,197,94,0.1);
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --text: #1a2035;
+  --text2: #64748b;
+  --text3: #475569;
+  --sidebar-w: 68px;
+  --r: 10px;
+  --r2: 14px;
+  --sh: 0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.05);
+  --sh-lg: 0 4px 6px rgba(0,0,0,0.04), 0 10px 30px rgba(0,0,0,0.08);
+  --sidebar-bg: #1e3a8a;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  font-family:'Lexend',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  line-height:1.5;
+}
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ══ SCREENS ══ */
+.screen{display:none;min-height:100vh;margin-left:var(--sidebar-w);}
+#quizScreen,#resultScreen{margin-left:0;}
+.screen.active{display:flex;}
+
+/* ══════════════════════════
+   SIDEBAR
+══════════════════════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 0;
+  gap: 6px;
+  position: fixed;
+  height: 100vh;
+  z-index: 200;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.12);
+}
+
+.sb-logo {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+  padding: 8px 0 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  width: 100%;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.sb-item {
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: all 0.18s;
+  position: relative;
+}
+.sb-item:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+.sb-item.active {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+}
+
+/* tooltip */
+.sb-item::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 10px);
+  background: #1e293b;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.sb-item:hover::after { opacity: 1; }
+
+/* ══════════════════════════
+   MAIN LAYOUT
+══════════════════════════ */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════
+   HOME / DASHBOARD
+══════════════════════════ */
+#homeScreen {
+  flex-direction: column;
+  padding: 40px 48px;
+  gap: 32px;
+}
+
+.dash-header { max-width: 900px; }
+
+.dash-greeting {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.dash-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+.dash-sub { font-size:0.9rem; color:var(--text2); }
+
+/* Action cards */
+.action-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+}
+
+.action-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: var(--sh);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.action-card::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg, var(--card-color, var(--accent-glow)) 0%, transparent 60%);
+  opacity:0;
+  transition:opacity 0.2s;
+}
+.action-card:hover { transform:translateY(-4px); box-shadow:var(--sh-lg); }
+.action-card:hover::before { opacity:1; }
+
+.ac-icon {
+  width:44px;height:44px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;
+  flex-shrink:0;
+}
+.ac-icon.blue { background:rgba(45,72,169,0.1); color:var(--accent); }
+.ac-icon.green { background:rgba(34,197,94,0.1); color:var(--green); }
+.ac-icon.orange { background:rgba(251,146,60,0.1); color:#fb923c; }
+
+.ac-body {}
+.ac-title { font-weight:700; font-size:1rem; color:var(--text); margin-bottom:4px; }
+.ac-desc { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+
+/* Recent section */
+.section-label {
+  font-size:0.75rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.07em;
+  color:var(--text2);
+  margin-bottom:14px;
+}
+
+.history-list { display:flex; flex-direction:column; gap:8px; max-width:900px; }
+
+.hist-item {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px 20px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  cursor:pointer;
+  transition:all 0.18s;
+  box-shadow:var(--sh);
+}
+.hist-item:hover { border-color:var(--accent); transform:translateX(4px); }
+.hist-dot {
+  width:36px;height:36px;
+  border-radius:50%;
+  background:var(--accent-glow);
+  color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;
+  font-weight:700;
+  flex-shrink:0;
+}
+.hist-info { flex:1;min-width:0; }
+.hist-title { font-weight:600; font-size:0.9rem; white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.hist-meta { font-size:0.75rem; color:var(--text2); margin-top:2px; }
+.hist-score {
+  font-size:0.85rem;
+  font-weight:700;
+  color:var(--green);
+  background:var(--green-glow);
+  padding:4px 10px;
+  border-radius:100px;
+  flex-shrink:0;
+}
+
+.empty-state {
+  text-align:center;
+  padding:36px;
+  color:var(--text2);
+  background:#fff;
+  border-radius:var(--r2);
+  border:1px dashed var(--border2);
+  font-size:0.88rem;
+}
+
+/* ══════════════════════════
+   CREATE SCREEN
+══════════════════════════ */
+#createScreen {
+  flex-direction:column;
+  align-items:center;
+  padding:40px 24px 60px;
+}
+
+.page-header {
+  width:100%;
+  max-width:680px;
+  margin-bottom:24px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.back-btn {
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--text2);
+  border-radius:var(--r);
+  padding:8px 14px;
+  cursor:pointer;
+  font-family:inherit;
+  font-size:0.85rem;
+  font-weight:500;
+  transition:all 0.15s;
+  display:flex;align-items:center;gap:6px;
+}
+.back-btn:hover{color:var(--text);border-color:var(--border2);background:var(--surface2);}
+
+.page-title { font-size:1.4rem; font-weight:800; color:var(--text); }
+
+.create-card {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:36px;
+  width:100%;
+  max-width:680px;
+  box-shadow:var(--sh-lg);
+}
+
+label {
+  display:block;
+  color:var(--text2);
+  font-size:0.74rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.07em;
+  margin-bottom:7px;
+  margin-top:20px;
+}
+label:first-of-type{margin-top:0;}
+
+input[type=text], input[type=password], input[type=email], select, textarea {
+  width:100%;
+  background:var(--surface2);
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  color:var(--text);
+  font-family:inherit;
+  font-size:0.93rem;
+  padding:11px 14px;
+  outline:none;
+  transition:border-color 0.18s,box-shadow 0.18s;
+}
+input[type=text]:focus, input[type=password]:focus, input[type=email]:focus, select:focus, textarea:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(45,72,169,0.1);
+  background:#fff;
+}
+textarea {
+  min-height:160px;
+  resize:vertical;
+  line-height:1.6;
+  font-family:monospace;
+  font-size:0.88rem;
+}
+select option{background:var(--surface2);}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+.hint{
+  color:var(--text2);
+  font-size:0.76rem;
+  margin-top:7px;
+  line-height:1.55;
+  padding:10px 14px;
+  background:var(--surface2);
+  border-radius:8px;
+  border-left:3px solid var(--accent);
+}
+
+/* ══ BUTTONS ══ */
+.btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:11px 26px;
+  border-radius:999px;
+  font-family:inherit;
+  font-size:0.9rem;
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+  transition:all 0.18s cubic-bezier(0.4,0,0.2,1);
+  text-decoration:none;
+  letter-spacing:0.3px;
+}
+.btn-primary {
+  background:var(--accent);
+  color:#fff;
+  box-shadow:0 4px 12px rgba(45,72,169,0.25);
+}
+.btn-primary:hover{transform:translateY(-1px) scale(1.02);box-shadow:0 6px 20px rgba(45,72,169,0.35);background:var(--accent-light);}
+.btn-secondary {
+  background:#fff;
+  color:var(--accent);
+  border:2px solid var(--accent);
+}
+.btn-secondary:hover{background:var(--accent-glow);transform:translateY(-1px);}
+.btn-ghost {
+  background:#fff;
+  color:var(--text3);
+  border:1.5px solid var(--border);
+}
+.btn-ghost:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-glow);}
+.btn-green {
+  background:var(--green);
+  color:#fff;
+  box-shadow:0 4px 12px rgba(34,197,94,0.25);
+}
+.btn-green:hover{transform:translateY(-1px) scale(1.02);box-shadow:0 6px 20px rgba(34,197,94,0.35);}
+.btn-full{width:100%;margin-top:22px;padding:14px;font-size:1rem;}
+.btn-sm{padding:7px 18px;font-size:0.82rem;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none !important;box-shadow:none !important;}
+
+/* ══ CREATE ACTIONS ROW ══ */
+.create-actions{display:flex;gap:10px;align-items:center;margin-top:16px;}
+.create-actions .btn-ghost{font-size:0.8rem;padding:8px 16px;}
+
+/* ══════════════════════════
+   QUIZ SCREEN
+══════════════════════════ */
+#quizScreen{flex-direction:column;margin-left:0;}
+
+.quiz-topbar {
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:100;
+  gap:14px;
+  box-shadow:0 1px 0 var(--border);
+}
+.qt-left{display:flex;align-items:center;gap:12px;min-width:0;flex:1;}
+.qt-title{font-weight:700;font-size:0.93rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;color:var(--text);}
+.pill{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:3px 11px;
+  font-size:0.73rem;
+  color:var(--text2);
+  font-weight:600;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.qt-right{display:flex;align-items:center;gap:10px;}
+
+.timer {
+  font-size:1.05rem;
+  font-weight:700;
+  color:var(--accent-light);
+  background:var(--surface2);
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:6px 16px;
+  min-width:76px;
+  text-align:center;
+  transition:color 0.3s,border-color 0.3s,background 0.3s;
+  font-variant-numeric: tabular-nums;
+}
+.timer.warn{color:var(--yellow);border-color:var(--yellow);background:rgba(245,158,11,0.05);}
+.timer.danger{color:var(--red);border-color:var(--red);background:rgba(239,68,68,0.05);animation:blink 0.7s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.45}}
+
+.progress-line{height:3px;background:var(--surface2);}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width 0.35s ease;}
+
+.q-nav-bar {
+  padding:12px 24px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+  max-height:120px;
+  overflow-y:auto;
+}
+.q-dot{
+  width:36px;height:36px;
+  border-radius:50%;
+  border:1.5px solid var(--border);
+  background:#fff;
+  color:var(--text2);
+  font-size:0.8rem;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.18s;
+  flex-shrink:0;
+}
+.q-dot:hover{border-color:var(--accent);color:var(--accent);transform:scale(1.1);}
+.q-dot.cur{background:var(--accent);border-color:var(--accent);color:#fff;transform:scale(1.05);}
+.q-dot.done{background:var(--green);border-color:var(--green);color:#fff;}
+.q-dot.flag{background:var(--yellow);border-color:var(--yellow);color:#fff;}
+
+.quiz-main{
+  flex:1;
+  padding:32px 28px 48px;
+  max-width:760px;
+  margin:0 auto;
+  width:100%;
+}
+.q-label{font-size:0.72rem;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+.q-text{font-size:1.1rem;font-weight:500;line-height:1.75;margin-bottom:28px;color:var(--text);}
+
+.options{display:flex;flex-direction:column;gap:10px;}
+.opt{
+  display:flex;align-items:center;gap:14px;
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:16px 22px;
+  cursor:pointer;
+  transition:all 0.18s;
+  box-shadow:var(--sh);
+}
+.opt:hover:not(.locked){border-color:var(--accent);background:var(--accent-glow);transform:translateX(3px);}
+.opt.sel{border-color:var(--accent);background:var(--accent-glow);}
+.opt.correct{border-color:var(--green);background:var(--green-glow);}
+.opt.wrong{border-color:var(--red);background:rgba(239,68,68,0.05);}
+
+.opt-key{
+  width:30px;height:30px;
+  border-radius:50%;
+  background:var(--surface2);
+  border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.85rem;font-weight:700;
+  flex-shrink:0;color:var(--text2);
+  transition:all 0.18s;
+}
+.opt.sel .opt-key{background:var(--accent);border-color:var(--accent);color:#fff;}
+.opt.correct .opt-key{background:var(--green);border-color:var(--green);color:#fff;}
+.opt.wrong .opt-key{background:var(--red);border-color:var(--red);color:#fff;}
+.opt-text{font-size:0.96rem;line-height:1.5;flex:1;color:var(--text);}
+.opt-icon{margin-left:auto;font-size:1.1rem;flex-shrink:0;}
+.opt-speak{background:none;border:none;cursor:pointer;color:var(--text2);padding:4px 6px;border-radius:6px;display:flex;align-items:center;transition:all 0.15s;flex-shrink:0;margin-left:auto;}
+.opt-speak:hover{color:var(--accent);background:var(--accent-glow);}
+
+.q-footer{
+  display:flex;align-items:center;gap:10px;
+  margin-top:28px;flex-wrap:wrap;
+}
+.q-footer .nav-right{margin-left:auto;display:flex;gap:10px;}
+
+/* ══════════════════════════
+   RESULT SCREEN
+══════════════════════════ */
+#resultScreen{
+  flex-direction:column;
+  align-items:center;
+  padding:48px 24px 80px;
+  background:var(--bg);
+  margin-left:0;
+}
+
+.res-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:40px;
+  max-width:500px;
+  width:100%;
+  text-align:center;
+  box-shadow:var(--sh-lg);
+  animation:fadeUp 0.45s ease both;
+}
+
+.score-ring{
+  width:130px;height:130px;
+  border-radius:50%;
+  margin:0 auto 26px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:conic-gradient(var(--green) calc(var(--p,0) * 3.6deg), var(--surface2) 0deg);
+  box-shadow:0 0 0 6px var(--surface),0 0 0 7px var(--border);
+  position:relative;
+}
+.score-ring::after{
+  content:'';
+  position:absolute;inset:14px;
+  border-radius:50%;background:var(--surface);
+}
+.score-inner{position:relative;z-index:1;text-align:center;}
+.score-big{font-size:2rem;font-weight:800;color:var(--text);}
+.score-of{font-size:0.77rem;color:var(--text2);}
+
+.res-title{font-size:1.5rem;font-weight:800;margin-bottom:5px;color:var(--text);}
+.res-sub{color:var(--text2);font-size:0.88rem;margin-bottom:28px;line-height:1.6;}
+
+.res-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
+.rs-box{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:14px 8px;
+}
+.rs-val{font-size:1.5rem;font-weight:700;margin-bottom:3px;}
+.rs-lbl{font-size:0.7rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;}
+.rs-box.g .rs-val{color:var(--green);}
+.rs-box.r .rs-val{color:var(--red);}
+.rs-box.b .rs-val{color:var(--accent);}
+
+.res-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+
+/* name prompt */
+.name-prompt{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:14px;
+  margin-bottom:20px;
+  text-align:left;
+}
+.name-prompt p{font-size:0.82rem;color:var(--text2);margin-bottom:9px;font-weight:500;}
+.name-row{display:flex;gap:8px;}
+.name-row input{flex:1;margin:0;}
+
+/* review */
+.review-wrap{
+  max-width:500px;
+  width:100%;
+  margin-top:20px;
+  animation:fadeUp 0.4s ease both;
+}
+.rev-head{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;color:var(--text2);margin-bottom:12px;}
+.rev-item{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:14px 16px;
+  margin-bottom:8px;
+}
+.rev-item.rc{border-left:3px solid var(--green);}
+.rev-item.rw{border-left:3px solid var(--red);}
+.rev-item.rs{border-left:3px solid var(--border2);}
+.rev-q{font-weight:600;font-size:0.88rem;line-height:1.5;margin-bottom:5px;display:flex;gap:8px;}
+.rev-ans{font-size:0.8rem;color:var(--text2);}
+.rev-ans .ca{color:var(--green);font-weight:600;}
+.rev-ans .wa{color:var(--red);text-decoration:line-through;}
+
+/* ══ TOAST ══ */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#1e293b;color:#fff;
+  border-radius:var(--r);padding:11px 20px;
+  font-size:0.85rem;font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  z-index:9999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  white-space:nowrap;display:flex;align-items:center;gap:8px;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{background:#166534;color:#dcfce7;}
+.toast.error{background:#991b1b;color:#fef2f2;}
+.toast.info{background:#1e3a8a;color:#dbeafe;}
+
+/* ══ MODAL ══ */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(4px);
+  z-index:500;
+  display:none;align-items:center;justify-content:center;
+  padding:24px;
+  transition:opacity 0.2s;
+}
+.modal-overlay.open{display:flex;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:32px;
+  max-width:480px;
+  width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.2);
+  transform:translateY(16px);transition:transform 0.2s;
+}
+.modal-overlay.open .modal{transform:none;}
+.modal-title{font-weight:800;font-size:1.15rem;margin-bottom:18px;}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap;}
+
+/* ══ SIDEBAR BOTTOM ══ */
+.sb-spacer { flex: 1; }
+.sb-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.3);
+  transition: all 0.18s;
+  letter-spacing: 0;
+  position: relative;
+}
+.sb-avatar:hover { background: rgba(255,255,255,0.3); transform: scale(1.08); }
+.sb-avatar.guest { background: transparent; border: 2px dashed rgba(255,255,255,0.3); color: rgba(255,255,255,0.5); }
+.sb-avatar::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 10px);
+  background: #1e293b;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.sb-avatar:hover::after { opacity: 1; }
+
+/* ══ AUTH MODAL ══ */
+.auth-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.auth-tab { flex: 1; padding: 9px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text2); background: var(--surface2); transition: all 0.18s; border: none; font-family: inherit; }
+.auth-tab.active { background: var(--accent); color: #fff; }
+.auth-input-group { margin-bottom: 14px; }
+.auth-input-group label { margin-top: 0; margin-bottom: 6px; }
+.auth-input-group input { margin: 0; }
+.auth-error { color: var(--red); font-size: 0.8rem; margin-top: 10px; text-align: center; min-height: 18px; }
+.user-info-box { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--surface2); border-radius: var(--r); margin-bottom: 16px; border: 1px solid var(--border); }
+.user-info-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.user-info-name { font-weight: 600; font-size: 0.9rem; }
+.user-info-email { font-size: 0.75rem; color: var(--text2); }
+
+/* ══ LEADERBOARD SCREEN ══ */
+#leaderboardScreen { flex-direction: column; }
+.lb-body { padding: 32px 40px; max-width: 680px; }
+.lb-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
+.lb-sub { font-size: 0.85rem; color: var(--text2); margin-bottom: 28px; }
+.lb-row {
+  display: flex; align-items: center; gap: 14px;
+  background: #fff; border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 18px;
+  margin-bottom: 10px; transition: all 0.18s;
+  box-shadow: var(--sh);
+}
+.lb-row:hover { transform: translateX(4px); border-color: var(--accent); }
+.lb-rank {
+  font-size: 1.3rem; font-weight: 800; width: 32px; text-align: center; flex-shrink: 0;
+}
+.lb-rank.r1 { color: #f59e0b; }
+.lb-rank.r2 { color: #94a3b8; }
+.lb-rank.r3 { color: #cd7c47; }
+.lb-rank.rn { font-size: 0.9rem; color: var(--text2); }
+.lb-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-glow); color: var(--accent); font-weight: 700; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.lb-info { flex: 1; min-width: 0; }
+.lb-name { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-meta { font-size: 0.75rem; color: var(--text2); margin-top: 2px; }
+.lb-score { font-size: 1.1rem; font-weight: 800; color: var(--accent); text-align: right; }
+.lb-score span { display: block; font-size: 0.7rem; font-weight: 500; color: var(--text2); }
+.lb-empty { text-align: center; padding: 48px; color: var(--text2); font-size: 0.9rem; }
+
+/* ══ ANIMS ══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.shake{animation:shake 0.3s ease;}
+
+/* ══ LOADER ══ */
+.loader{
+  display:inline-block;
+  width:15px;height:15px;
+  border:2px solid rgba(255,255,255,0.2);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+
+
+/* ══ LIBRARY ══ */
+.lib-topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 40px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.lib-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:100px;padding:4px;}
+.lib-tab{padding:6px 18px;border-radius:100px;font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--text2);transition:all 0.18s;border:none;background:transparent;font-family:inherit;}
+.lib-tab.active{background:#fff;color:var(--accent);box-shadow:var(--sh);}
+.lib-body{padding:28px 40px;max-width:960px;}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.lib-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:22px;transition:all 0.2s;box-shadow:var(--sh);display:flex;flex-direction:column;gap:10px;}
+.lib-card:hover{transform:translateY(-3px);box-shadow:var(--sh-lg);border-color:var(--accent);}
+.lib-card-title{font-weight:700;font-size:1rem;color:var(--text);line-height:1.4;}
+.lib-card-meta{font-size:0.78rem;color:var(--text2);}
+.lib-card-actions{display:flex;gap:8px;margin-top:4px;}
+.lib-btn{font-size:0.75rem;font-weight:600;padding:5px 12px;border-radius:100px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all 0.15s;font-family:inherit;}
+.lib-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow);}
+.lib-btn.del:hover{border-color:var(--red);color:var(--red);background:rgba(239,68,68,0.05);}
+.lib-empty{text-align:center;padding:48px;color:var(--text2);background:#fff;border-radius:var(--r2);border:1px dashed var(--border2);font-size:0.88rem;}
+/* Collection detail */
+.col-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.col-title{font-size:1.3rem;font-weight:800;color:var(--text);}
+.col-meta{font-size:0.82rem;color:var(--text2);margin-bottom:20px;}
+/* Add quiz to collection modal */
+.quiz-pick-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r);border:1.5px solid var(--border);margin-bottom:8px;cursor:pointer;transition:all 0.15s;background:#fff;}
+.quiz-pick-item:hover{border-color:var(--accent);background:var(--accent-glow);}
+.quiz-pick-item.selected{border-color:var(--accent);background:var(--accent-glow);}
+.quiz-pick-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.quiz-pick-item.selected .quiz-pick-check{background:var(--accent);border-color:var(--accent);color:#fff;font-size:10px;}
+.quiz-pick-info{flex:1;min-width:0;}
+.quiz-pick-title{font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.quiz-pick-meta{font-size:0.75rem;color:var(--text2);}
+/* ══ RESPONSIVE ══ */
+@media(max-width:768px){
+  #homeScreen{padding:24px 20px;}
+  .action-cards{grid-template-columns:1fr;}
+  .create-card{padding:24px 20px;}
+  .row2{grid-template-columns:1fr;}
+  .qt-title{max-width:140px;}
+  .quiz-main{padding:24px 16px 40px;}
+  .res-card{padding:28px 20px;}
+  :root{--sidebar-w:56px;}
+}
+
+@media(max-width:480px){
+  :root{--sidebar-w:0px;}
+  .sidebar{display:none;}
+  .quiz-topbar{padding:0 16px;}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="appSidebar">
+    <div class="sb-logo">L</div>
+    <div class="sb-item active" onclick="goHome()" data-tip="Trang chủ" title="Trang chủ">
+      <i data-lucide="home" style="width:20px;height:20px;"></i>
+    </div>
+    <div class="sb-item" onclick="showAppScreen('createScreen')" data-tip="Tạo đề thi" title="Tạo đề thi">
+      <i data-lucide="file-plus-2" style="width:20px;height:20px;"></i>
+    </div>
+    <div class="sb-item" onclick="showAppScreen('libraryScreen')" data-tip="Thư viện" title="Thư viện">
+      <i data-lucide="library" style="width:20px;height:20px;"></i>
+    </div>
+    <div class="sb-item" onclick="showAppScreen('leaderboardScreen')" data-tip="Bảng xếp hạng" title="Bảng xếp hạng" id="sbLeaderboard">
+      🏆
+    </div>
+    <div class="sb-spacer"></div>
+    <div class="sb-avatar guest" id="sbAvatar" onclick="openAuthModal()" data-tip="Đăng nhập" title="Đăng nhập" style="margin-bottom:8px;">
+      <i data-lucide="user" style="width:16px;height:16px;"></i>
+    </div>
+</aside>
+
+
+    <!-- ═══ HOME ═══ -->
+<div id="homeScreen" class="screen active">
+      <div class="action-cards">
+        <div class="action-card" onclick="showAppScreen('createScreen')" style="--card-color:rgba(45,72,169,0.06)">
+          <div class="ac-icon blue"><i data-lucide="file-plus-2" style="width:20px;height:20px;"></i></div>
+          <div class="ac-body">
+            <div class="ac-title">Tạo đề thi mới</div>
+            <div class="ac-desc">Dán câu hỏi, chọn thời gian và bắt đầu làm bài ngay</div>
+          </div>
+        </div>
+        <div class="action-card" onclick="showAppScreen('libraryScreen')" style="--card-color:rgba(34,197,94,0.06)">
+          <div class="ac-icon green"><i data-lucide="library" style="width:20px;height:20px;"></i></div>
+          <div class="ac-body">
+            <div class="ac-title">Thư viện bài</div>
+            <div class="ac-desc">Xem các đề thi đã lưu và chia sẻ với người khác</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+<!-- ═══ CREATE ═══ -->
+<div id="createScreen" class="screen" style="flex-direction:column;align-items:center;padding:40px 24px 60px;">
+      <div class="page-header" style="max-width:680px;">
+        <button class="back-btn" onclick="showAppScreen('homeScreen')">
+          <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Quay lại
+        </button>
+      </div>
+
+      <div class="create-card">
+        <label>Tiêu đề đề thi</label>
+        <input type="text" id="quizTitle" placeholder="Nhập tên đề thi...">
+
+        <label style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Nội dung câu hỏi</span>
+          <label for="fileUpload" style="cursor:pointer;color:var(--accent);display:flex;align-items:center;gap:5px;font-size:0.78rem;font-weight:600;text-transform:none;letter-spacing:normal;margin:0;" title="Tải file lên (.txt, .docx)">
+            <i data-lucide="upload" style="width:14px;height:14px;"></i> Tải file
+          </label>
+        </label>
+        <input type="file" id="fileUpload" accept=".txt,.docx" style="display:none;" onchange="handleFileUpload(event)">
+        <textarea id="quizInput" placeholder="Dán nội dung câu hỏi tại đây..."></textarea>
+
+        <label>Ghi chú <span style="font-weight:400;text-transform:none;letter-spacing:normal;color:var(--text2);font-size:0.78rem;">(hiện sau khi nộp bài)</span></label>
+        <textarea id="quizNotes" placeholder="Tóm tắt lý thuyết, lưu ý quan trọng..." style="min-height:80px;"></textarea>
+
+        <div class="row2" style="margin-top:20px;">
+          <div>
+            <label>Thời gian làm bài</label>
+            <select id="timeLimit">
+              <option value="0">Không giới hạn</option>
+              <option value="5">5 phút</option>
+              <option value="10">10 phút</option>
+              <option value="15" selected>15 phút</option>
+              <option value="20">20 phút</option>
+              <option value="30">30 phút</option>
+              <option value="45">45 phút</option>
+              <option value="60">60 phút</option>
+            </select>
+          </div>
+          <div>
+            <label>Chế độ chấm</label>
+            <select id="quizMode">
+              <option value="normal">Nộp bài mới chấm</option>
+              <option value="instant">Chấm ngay từng câu</option>
+            </select>
+          </div>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-size:0.85rem;margin-top:18px;cursor:pointer;">
+          <input type="checkbox" id="shuffleOpt" style="width:auto;"> 
+          <span style="font-weight:600;color:var(--text2);">Xáo trộn thứ tự câu hỏi</span>
+        </label>
+
+        <button class="btn btn-primary btn-full" id="startBtn" onclick="startQuiz()">
+          <i data-lucide="play" style="width:16px;height:16px;"></i> Bắt đầu làm bài
+        </button>
+        <button class="btn btn-ghost btn-full" id="saveLibBtn" onclick="saveQuizToLibrary()" style="margin-top:10px;">
+          <i data-lucide="bookmark" style="width:14px;height:14px;"></i> Lưu vào thư viện
+        </button>
+      </div>
+    </div>
+
+<!-- ═══ LIBRARY ═══ -->
+<div id="libraryScreen" class="screen" style="flex-direction:column;">
+  <div class="lib-topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button class="back-btn" onclick="showAppScreen('homeScreen')">
+        <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Quay lại
+      </button>
+      <div class="lib-tabs">
+        <button class="lib-tab active" id="tabCollections" onclick="switchLibTab('collections')">Bộ đề</button>
+        <button class="lib-tab" id="tabQuizzes" onclick="switchLibTab('quizzes')">Đề thi</button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="libAddBtn" onclick="libAddAction()">
+      <i data-lucide="plus" style="width:14px;height:14px;"></i> <span id="libAddLabel">Tạo bộ đề</span>
+    </button>
+  </div>
+  <div class="lib-body">
+    <div id="libQuizzesPane" style="display:none;">
+      <div class="lib-grid" id="libGrid"><div class="lib-empty">Đang tải...</div></div>
+    </div>
+    <div id="libCollectionsPane">
+      <div class="lib-grid" id="colGrid"><div class="lib-empty">Chưa có bộ đề nào.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COLLECTION DETAIL ═══ -->
+<div id="colDetailScreen" class="screen" style="flex-direction:column;">
+  <div class="lib-topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button class="back-btn" onclick="showAppScreen('libraryScreen');switchLibTab('collections')">
+        <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Quay lại
+      </button>
+      <div>
+        <div class="col-title" id="colDetailTitle">Bộ đề</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="openAddToCollection()">
+        <i data-lucide="plus" style="width:14px;height:14px;"></i> Thêm đề
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="deleteCollection(currentColId)" style="color:var(--red);">
+        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+      </button>
+    </div>
+  </div>
+  <div class="lib-body">
+    <div class="col-meta" id="colDetailMeta"></div>
+    <div class="lib-grid" id="colDetailGrid"><div class="lib-empty">Bộ đề trống. Thêm đề thi vào!</div></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: TẠO BỘ ĐỀ ═══ -->
+<div class="modal-overlay" id="newColModal">
+  <div class="modal">
+    <div class="modal-title">📚 Tạo bộ đề mới</div>
+    <label>Tên bộ đề</label>
+    <input type="text" id="newColName" placeholder="VD: Ôn tập Toán lớp 10...">
+    <div class="modal-btns">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('newColModal')">Huỷ</button>
+      <button class="btn btn-primary btn-sm" onclick="createCollection()">Tạo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: THÊM ĐỀ VÀO BỘ ═══ -->
+<div class="modal-overlay" id="addToColModal">
+  <div class="modal">
+    <div class="modal-title">➕ Thêm đề vào bộ</div>
+    <div id="quizPickList" style="max-height:320px;overflow-y:auto;margin:12px 0;"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('addToColModal')">Huỷ</button>
+      <button class="btn btn-primary btn-sm" onclick="saveAddToCollection()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LEADERBOARD ═══ -->
+<div id="leaderboardScreen" class="screen" style="flex-direction:column;">
+  <div class="lib-topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button class="back-btn" onclick="showAppScreen('homeScreen')">
+        <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Quay lại
+      </button>
+      <div style="font-weight:700;font-size:1rem;">🏆 Bảng xếp hạng</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="loadLeaderboard()">
+      <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Làm mới
+    </button>
+  </div>
+  <div class="lb-body">
+    <div id="lbList"><div class="lb-empty">Đang tải...</div></div>
+  </div>
+</div>
+
+<!-- ═══ AUTH MODAL ═══ -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:400px;">
+    <!-- Guest view -->
+    <div id="authGuestView">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Đăng nhập</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Đăng ký</button>
+      </div>
+      <div class="auth-input-group">
+        <label>Email</label>
+        <input type="text" id="authEmail" placeholder="email@example.com">
+      </div>
+      <div class="auth-input-group">
+        <label>Mật khẩu</label>
+        <input type="password" id="authPassword" placeholder="Nhập mật khẩu...">
+      </div>
+      <div class="auth-input-group" id="authNameGroup" style="display:none;">
+        <label>Tên hiển thị</label>
+        <input type="text" id="authName" placeholder="Tên của bạn...">
+      </div>
+      <div class="auth-error" id="authError"></div>
+      <div class="modal-btns">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('authModal')">Huỷ</button>
+        <button class="btn btn-primary btn-sm" id="authSubmitBtn" onclick="handleAuth()">Đăng nhập</button>
+      </div>
+    </div>
+    <!-- Logged-in view -->
+    <div id="authLoggedView" style="display:none;">
+      <div class="modal-title">👤 Tài khoản</div>
+      <div class="user-info-box">
+        <div class="user-info-avatar" id="loggedAvatar">A</div>
+        <div>
+          <div class="user-info-name" id="loggedName">Tên</div>
+          <div class="user-info-email" id="loggedEmail">email</div>
+        </div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('authModal')">Đóng</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="handleLogout()">Đăng xuất</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ QUIZ SCREEN ═══ -->
+<div id="quizScreen" class="screen" style="flex-direction:column;">
+  <div class="quiz-topbar">
+    <div class="qt-left">
+      <button class="btn btn-ghost btn-sm" onclick="confirmExit()" style="padding:6px 10px;border-radius:8px;">
+        <i data-lucide="x" style="width:14px;height:14px;"></i>
+      </button>
+      <div class="qt-title" id="qtTitle">Quiz</div>
+      <div class="pill" id="qtBadge">0/0</div>
+    </div>
+    <div class="qt-right">
+      <div class="timer" id="timerEl">∞</div>
+    </div>
+  </div>
+  <div class="progress-line"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="q-nav-bar" id="qNavBar"></div>
+  <div class="quiz-main" id="quizMain"></div>
+</div>
+
+
+<!-- ═══ RESULT SCREEN ═══ -->
+<div id="resultScreen" class="screen" style="flex-direction:column;align-items:center;">
+  <div class="res-card">
+    <div class="score-ring" id="scoreRing" style="--p:0">
+      <div class="score-inner">
+        <div class="score-big" id="scoreNum">0</div>
+        <div class="score-of" id="scoreOf">/0</div>
+      </div>
+    </div>
+    <div class="res-title" id="resTitle">Xong!</div>
+    <div class="res-sub" id="resSub"></div>
+
+    <div class="res-stats">
+      <div class="rs-box g"><div class="rs-val" id="rsCorrect">0</div><div class="rs-lbl">✅ Đúng</div></div>
+      <div class="rs-box r"><div class="rs-val" id="rsWrong">0</div><div class="rs-lbl">❌ Sai</div></div>
+      <div class="rs-box b"><div class="rs-val" id="rsSkip">0</div><div class="rs-lbl">⬜ Bỏ qua</div></div>
+    </div>
+
+    <div id="resNotes" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:18px;text-align:left;">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin-bottom:8px;">📝 Ghi chú</div>
+      <div id="resNotesContent" style="font-size:0.88rem;line-height:1.7;color:var(--text);white-space:pre-wrap;"></div>
+    </div>
+    <div class="res-btns">
+      <button class="btn btn-ghost btn-sm" onclick="toggleReview()">📋 Xem lại</button>
+      <button class="btn btn-ghost btn-sm" onclick="retakeQuiz()">🔄 Làm lại</button>
+      <button class="btn btn-primary btn-sm" onclick="goHome()">🏠 Trang chủ</button>
+    </div>
+  </div>
+
+  <div class="review-wrap" id="reviewWrap" style="display:none;"></div>
+</div>
+
+
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ STATE ═══ */
+let questions = [], answers = {}, flags = {}, current = 0;
+let timerInterval = null, timeLeft = 0, totalTime = 0, mode = 'normal';
+let currentTitle = 'Quiz';
+let currentNotes = '';
+let lastResult = null; // store for re-take
+
+/* ═══ PARSE ═══ */
+function normalizeRaw(raw) {
+  let s = raw;
+  s = s.replace(/(C[aâ]u\s*\d+|Question\s*\d+|\d+[\.\)]\s*(?=[A-ZĐÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ]))/gi, '\n$1');
+  s = s.replace(/([a-zắặẵằẳâầấậẩẫăắặẳẵàáạảãđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ\d\?\.\!\$\)])([A-D])[\.\)]\s/g, '$1\n$2. ');
+  s = s.replace(/(Đáp\s*án|Dap\s*an|Answer)/gi, '\n$1');
+  return s;
+}
+
+function parseQuiz(raw) {
+  const qs = [];
+  const normalized = normalizeRaw(raw);
+  const blocks = ('\n' + normalized).split(/\n(?=(?:c[aâ]u\s*\d+|question\s*\d+|\d+[\.\)]\s*\S))/i)
+    .map(b => b.trim()).filter(Boolean);
+
+  for (const block of blocks) {
+    const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
+    if (!lines.length) continue;
+
+    let qLine = lines[0].replace(/^(?:c[aâ]u\s*\d+\s*[:\.\-\)>]?\s*|question\s*\d+\s*[:\.\-\)>]?\s*|\d+[\.\)\-]\s*)/i, '').trim();
+    if (!qLine && lines[1] && !/^[A-Da-d][\.\)]/.test(lines[1])) {
+      qLine = lines[1];
+      lines.splice(1, 1);
+    }
+    if (!qLine) continue;
+
+    const opts = {};
+    let answer = '';
+
+    for (let i = 1; i < lines.length; i++) {
+      const l = lines[i];
+      const ansMatch = l.match(/^(?:\u0111\u00e1p\s*\u00e1n\s*(?:\u0111\u00fang\s*)?|dap\s*an\s*(?:dung\s*)?|answer\s*(?:key\s*)?)\s*[:\.]?\s*([A-Da-d])/i);
+      if (ansMatch) { answer = ansMatch[1].toUpperCase(); continue; }
+      const optMatch = l.match(/^([A-Da-d])[\.\)]\s*(.+)/);
+      if (optMatch) { opts[optMatch[1].toUpperCase()] = optMatch[2].trim(); continue; }
+    }
+
+    if (!answer) {
+      for (const [key, val] of Object.entries(opts)) {
+        if (/[*✓✔]|\(đúng\)|\(correct\)/i.test(val)) {
+          answer = key;
+          opts[key] = val.replace(/\s*[*✓✔]|\s*\(đúng\)|\s*\(correct\)/gi, '').trim();
+          break;
+        }
+      }
+    }
+
+    if (qLine && Object.keys(opts).length >= 2 && answer) {
+      qs.push({ q: qLine, opts, answer });
+    }
+  }
+  return qs;
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* ═══ START ═══ */
+function startQuiz() {
+  const raw = document.getElementById('quizInput').value.trim();
+  currentTitle = document.getElementById('quizTitle').value.trim() || 'Quiz không tên';
+  currentNotes = document.getElementById('quizNotes').value.trim();
+  if (!raw) { toast('Vui lòng nhập câu hỏi!', 'error'); return; }
+
+  let parsed = parseQuiz(raw);
+  if (!parsed.length) {
+    toast('Không thể phân tích câu hỏi. Kiểm tra lại định dạng!', 'error');
+    return;
+  }
+
+  const doShuffle = document.getElementById('shuffleOpt').checked;
+  questions = doShuffle ? shuffleArray([...parsed]) : parsed;
+
+  answers = {}; flags = {}; current = 0;
+  mode = document.getElementById('quizMode').value;
+  totalTime = parseInt(document.getElementById('timeLimit').value) * 60;
+
+  document.getElementById('qtTitle').textContent = currentTitle;
+  showScreen('quizScreen');
+  renderNav();
+  renderQ();
+  startTimer();
+  lucide.createIcons();
+}
+
+/* ═══ TIMER ═══ */
+function startTimer() {
+  clearInterval(timerInterval);
+  const el = document.getElementById('timerEl');
+  if (!totalTime) { el.textContent = '∞'; el.className = 'timer'; return; }
+  timeLeft = totalTime; updateTimer();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimer();
+    if (timeLeft <= 0) { clearInterval(timerInterval); submitQuiz(true); }
+  }, 1000);
+}
+
+function updateTimer() {
+  const el = document.getElementById('timerEl');
+  const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.className = 'timer' + (timeLeft <= 60 ? ' danger' : timeLeft <= 120 ? ' warn' : '');
+}
+
+/* ═══ NAV ═══ */
+function renderNav() {
+  const bar = document.getElementById('qNavBar');
+  bar.innerHTML = '';
+  questions.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'q-dot' + (i === current ? ' cur' : '') + (answers[i] !== undefined ? ' done' : '') + (flags[i] ? ' flag' : '');
+    d.textContent = i + 1;
+    d.onclick = () => { current = i; renderQ(); };
+    bar.appendChild(d);
+  });
+  document.getElementById('qtBadge').textContent = `${Object.keys(answers).length}/${questions.length}`;
+  document.getElementById('progressFill').style.width = `${((current + 1) / questions.length) * 100}%`;
+}
+
+/* ═══ RENDER Q ═══ */
+function renderQ() {
+  const q = questions[current];
+  const chosen = answers[current];
+  const instant = mode === 'instant';
+
+  let optsHtml = '';
+  ['A','B','C','D'].forEach(k => {
+    if (!q.opts[k]) return;
+    let cls = 'opt';
+    let icon = '';
+    if (instant && chosen !== undefined) {
+      cls += ' locked';
+      if (k === q.answer) { cls += ' correct'; }
+      else if (k === chosen) { cls += ' wrong'; }
+    } else if (chosen === k) cls += ' sel';
+
+    const txt = q.opts[k].replace(/`/g, "'");
+    optsHtml += `<div class="${cls}" onclick="pick('${k}')">
+      <div class="opt-key">${k}</div>
+      <div class="opt-text">${q.opts[k]}</div>
+      ${icon}
+      <button class="opt-speak" onclick="event.stopPropagation();speakText(\`${txt}\`)" title="Đọc to">
+        <i data-lucide="volume-2" style="width:15px;height:15px;"></i>
+      </button>
+    </div>`;
+  });
+
+  // renderQ sets innerHTML then
+  document.getElementById('quizMain').innerHTML = `
+    <div class="q-label">Câu ${current + 1} / ${questions.length}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="options">${optsHtml}</div>
+    <div class="q-footer">
+      <div class="nav-right">
+        ${current > 0 ? `<button class="btn btn-ghost btn-sm" onclick="go(-1)">← Trước</button>` : ''}
+        ${current < questions.length - 1
+          ? `<button class="btn btn-primary btn-sm" onclick="go(1)">Tiếp →</button>`
+          : `<button class="btn btn-green btn-sm" onclick="submitQuiz(false)">Nộp bài</button>`
+        }
+      </div>
+    </div>`;
+  renderNav();
+  lucide.createIcons();
+}
+
+function pick(k) {
+  if (mode === 'instant' && answers[current] !== undefined) return;
+  answers[current] = k;
+  renderQ();
+  if (mode === 'instant' && k !== questions[current].answer) {
+    document.querySelector('.opt.wrong')?.classList.add('shake');
+  }
+}
+
+function go(d) { current = Math.max(0, Math.min(questions.length - 1, current + d)); renderQ(); }
+function toggleFlag() { flags[current] = !flags[current]; renderQ(); }
+
+function confirmExit() {
+  if (Object.keys(answers).length === 0 || confirm('Thoát ra? Tiến trình sẽ không được lưu.')) {
+    clearInterval(timerInterval);
+    goHome();
+  }
+}
+
+/* ═══ SUBMIT ═══ */
+function submitQuiz(timeout = false) {
+  if (!timeout) {
+    const un = questions.length - Object.keys(answers).length;
+    if (un > 0 && !confirm(`Còn ${un} câu chưa trả lời. Vẫn nộp bài?`)) return;
+  }
+  clearInterval(timerInterval);
+
+  let correct = 0, wrong = 0, skip = 0;
+  questions.forEach((q, i) => {
+    if (answers[i] === undefined) skip++;
+    else if (answers[i] === q.answer) correct++;
+    else wrong++;
+  });
+
+  const pct = Math.round(correct / questions.length * 100);
+  const timeTaken = totalTime ? totalTime - timeLeft : null;
+
+  lastResult = { title: currentTitle, correct, total: questions.length, pct, timeTaken, date: Date.now() };
+
+  document.getElementById('scoreRing').style.setProperty('--p', pct);
+  document.getElementById('scoreNum').textContent = correct;
+  document.getElementById('scoreOf').textContent = `/${questions.length}`;
+  document.getElementById('rsCorrect').textContent = correct;
+  document.getElementById('rsWrong').textContent = wrong;
+  document.getElementById('rsSkip').textContent = skip;
+
+  const e = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '💪' : '📚';
+  const m = pct >= 90 ? 'Xuất sắc!' : pct >= 70 ? 'Làm tốt lắm!' : pct >= 50 ? 'Khá tốt!' : 'Cần cố gắng thêm!';
+  document.getElementById('resTitle').textContent = `${e} ${m}`;
+
+  let sub = `${correct}/${questions.length} câu đúng · ${pct}%`;
+  if (timeTaken) {
+    const mm = Math.floor(timeTaken / 60), ss = timeTaken % 60;
+    sub += ` · ${mm}p${String(ss).padStart(2,'0')}s`;
+  }
+  if (timeout) sub = '⏰ Hết giờ! · ' + sub;
+  document.getElementById('resSub').textContent = sub;
+
+  document.getElementById('reviewWrap').style.display = 'none';
+  // Show notes
+  const notesEl = document.getElementById('resNotes');
+  const notesTxt = document.getElementById('resNotesContent');
+  if (currentNotes) {
+    notesTxt.textContent = currentNotes;
+    notesEl.style.display = 'block';
+  } else {
+    notesEl.style.display = 'none';
+  }
+  showScreen('resultScreen');
+  // Auto-save to Supabase if logged in
+  if (currentUser) {
+    saveResultToSupabase(currentUser.name, correct, questions.length, pct);
+  }
+}
+
+/* ═══ SAVE RESULT (localStorage) ═══ */
+function saveResult() {
+  const name = document.getElementById('playerName').value.trim() || 'Ẩn danh';
+  if (!lastResult) return;
+  try {
+    const key = 'loen_history';
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    existing.unshift({ name, ...lastResult });
+    if (existing.length > 20) existing.pop(); // keep last 20
+    localStorage.setItem(key, JSON.stringify(existing));
+    toast(`Đã lưu kết quả cho "${name}"!`, 'success');
+    document.getElementById('playerName').value = '';
+  } catch(e) {
+    toast('Không thể lưu (trình duyệt không hỗ trợ)', 'error');
+  }
+}
+
+async function saveResultToSupabase(userName, correct, total, pct) {
+  try {
+    await supa('POST', 'results', {
+      user_id: currentUser.id,
+      user_name: userName,
+      quiz_title: currentTitle,
+      correct, total, pct
+    });
+  } catch(e) { /* silent fail */ }
+}
+
+
+function retakeQuiz() {
+  answers = {}; flags = {}; current = 0;
+  document.getElementById('reviewWrap').style.display = 'none';
+  showScreen('quizScreen');
+  renderNav();
+  renderQ();
+  startTimer();
+  lucide.createIcons();
+}
+
+/* ═══ REVIEW ═══ */
+function toggleReview() {
+  const wrap = document.getElementById('reviewWrap');
+  if (wrap.style.display !== 'none') { wrap.style.display = 'none'; return; }
+  let html = '<div class="rev-head">Xem lại câu trả lời</div>';
+  questions.forEach((q, i) => {
+    const ch = answers[i];
+    const ok = ch === q.answer;
+    const cls = ch === undefined ? 'rs' : ok ? 'rc' : 'rw';
+    const icon = ch === undefined ? '⬜' : ok ? '✅' : '❌';
+    let ansHtml = '';
+    if (ch && !ok) {
+      ansHtml = `<div class="rev-ans">Bạn chọn: <span class="wa">${ch}. ${q.opts[ch] || ''}</span></div>
+                 <div class="rev-ans">Đáp án: <span class="ca">${q.answer}. ${q.opts[q.answer] || ''}</span></div>`;
+    } else if (ok) {
+      ansHtml = `<div class="rev-ans">Đúng: <span class="ca">${q.answer}. ${q.opts[q.answer] || ''}</span></div>`;
+    } else {
+      ansHtml = `<div class="rev-ans">Đáp án: <span class="ca">${q.answer}. ${q.opts[q.answer] || ''}</span></div>`;
+    }
+    html += `<div class="rev-item ${cls}">
+      <div class="rev-q"><span>${icon}</span><span>Câu ${i+1}: ${q.q}</span></div>
+      ${ansHtml}
+    </div>`;
+  });
+  wrap.innerHTML = html;
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+
+
+/* ═══ HELPERS ═══ */
+function goHome() {
+  clearInterval(timerInterval);
+  showScreen('homeScreen');
+    updateSidebarActive('homeScreen');
+}
+
+function showAppScreen(id) {
+  showScreen(id);
+  updateSidebarActive(id);
+  if (id === 'libraryScreen') { loadCollections(); switchLibTab('collections'); }
+  if (id === 'leaderboardScreen') { loadLeaderboard(); }
+}
+
+function updateSidebarActive(id) {
+  document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
+  if (id === 'homeScreen') document.querySelectorAll('.sb-item')[0]?.classList.add('active');
+  if (id === 'createScreen') document.querySelectorAll('.sb-item')[1]?.classList.add('active');
+  if (id === 'libraryScreen') document.querySelectorAll('.sb-item')[2]?.classList.add('active');
+  if (id === 'leaderboardScreen') document.querySelectorAll('.sb-item')[3]?.classList.add('active');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const sidebar = document.getElementById('appSidebar');
+  if (id === 'quizScreen' || id === 'resultScreen') {
+    sidebar.style.display = 'none';
+  } else {
+    sidebar.style.display = 'flex';
+  }
+  window.scrollTo(0, 0);
+}
+
+let toastTimer = null;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || '') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function fillExample() {
+  document.getElementById('quizTitle').value = 'Kiến thức tổng hợp';
+  document.getElementById('quizInput').value = `Câu 1: Thủ đô của Việt Nam là gì?
+A. Hà Nội
+B. TP. Hồ Chí Minh
+C. Đà Nẵng
+D. Hải Phòng
+Đáp án: A
+
+Câu 2: 1 + 1 bằng mấy?
+A. 1
+B. 2
+C. 3
+D. 4
+Đáp án: B
+
+Câu 3: Hành tinh nào gần Mặt Trời nhất?
+A. Venus
+B. Earth
+C. Mercury
+D. Mars
+Đáp án: C
+
+Câu 4: Ngôn ngữ lập trình nào được tạo bởi Guido van Rossum?
+A. Java
+B. Python
+C. Ruby
+D. C++
+Đáp án: B`;
+  toast('Đã điền ví dụ 4 câu!', 'success');
+}
+
+function clearInput() {
+  document.getElementById('quizInput').value = '';
+  document.getElementById('quizTitle').value = '';
+  toast('Đã xóa nội dung', '');
+}
+
+
+/* ═══ AUTH STATE ═══ */
+let currentUser = null;  // { id, email, name }
+
+/* ═══ SUPABASE AUTH ═══ */
+const SUPA_URL = 'https://vzgflhkvxiiceughtlpw.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z2ZsaGt2eGlpY2V1Z2h0bHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDI1NjMsImV4cCI6MjA4ODQ3ODU2M30.Z6aZpnFZ6soqQFl194d1ViVD7vgwr3Dnb7yI5CRevmw';
+
+async function supa(method, path, body) {
+  const res = await fetch(SUPA_URL + '/rest/v1/' + path, {
+    method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': (method === 'POST' || method === 'PATCH') ? 'return=representation' : ''
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.status === 204 ? null : res.json();
+}
+
+async function supaAuth(endpoint, body) {
+  const res = await fetch(SUPA_URL + '/auth/v1/' + endpoint, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.msg || 'Lỗi xác thực');
+  return data;
+}
+
+/* ═══ INIT AUTH ═══ */
+async function initAuth() {
+  try {
+    const saved = localStorage.getItem('loen_session');
+    if (!saved) return;
+    const session = JSON.parse(saved);
+    // Verify token still valid
+    const res = await fetch(SUPA_URL + '/auth/v1/user', {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + session.access_token }
+    });
+    if (!res.ok) { localStorage.removeItem('loen_session'); return; }
+    const user = await res.json();
+    const name = user.user_metadata?.display_name || user.email.split('@')[0];
+    currentUser = { id: user.id, email: user.email, name, access_token: session.access_token };
+    updateAvatarUI();
+  } catch(e) { /* silent */ }
+}
+
+function updateAvatarUI() {
+  const av = document.getElementById('sbAvatar');
+  if (currentUser) {
+    const letter = currentUser.name.charAt(0).toUpperCase();
+    av.className = 'sb-avatar';
+    av.innerHTML = letter;
+    av.setAttribute('data-tip', currentUser.name);
+  } else {
+    av.className = 'sb-avatar guest';
+    av.innerHTML = '<i data-lucide="user" style="width:16px;height:16px;"></i>';
+    av.setAttribute('data-tip', 'Đăng nhập');
+    lucide.createIcons();
+  }
+}
+
+/* ═══ AUTH MODAL ═══ */
+let authMode = 'login';
+function openAuthModal() {
+  if (currentUser) {
+    document.getElementById('authGuestView').style.display = 'none';
+    document.getElementById('authLoggedView').style.display = 'block';
+    const letter = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('loggedAvatar').textContent = letter;
+    document.getElementById('loggedName').textContent = currentUser.name;
+    document.getElementById('loggedEmail').textContent = currentUser.email;
+  } else {
+    document.getElementById('authGuestView').style.display = 'block';
+    document.getElementById('authLoggedView').style.display = 'none';
+    switchAuthTab('login');
+  }
+  openModal('authModal');
+}
+
+function switchAuthTab(tab) {
+  authMode = tab;
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  document.getElementById('authNameGroup').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('authSubmitBtn').textContent = tab === 'login' ? 'Đăng nhập' : 'Đăng ký';
+  document.getElementById('authError').textContent = '';
+}
+
+async function handleAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPassword').value;
+  const name = document.getElementById('authName').value.trim();
+  const errEl = document.getElementById('authError');
+  const btn = document.getElementById('authSubmitBtn');
+  if (!email || !pass) { errEl.textContent = 'Vui lòng nhập email và mật khẩu!'; return; }
+  if (authMode === 'register' && !name) { errEl.textContent = 'Vui lòng nhập tên hiển thị!'; return; }
+  btn.disabled = true; btn.textContent = '...';
+  errEl.textContent = '';
+  try {
+    let data;
+    if (authMode === 'login') {
+      data = await supaAuth('token?grant_type=password', { email, password: pass });
+    } else {
+      data = await supaAuth('signup', { email, password: pass, data: { display_name: name } });
+      if (!data.access_token) {
+        errEl.textContent = 'Đăng ký thành công! Vui lòng kiểm tra email xác nhận rồi đăng nhập.';
+        btn.disabled = false; btn.textContent = 'Đăng ký';
+        return;
+      }
+    }
+    localStorage.setItem('loen_session', JSON.stringify({ access_token: data.access_token }));
+    const uname = data.user?.user_metadata?.display_name || name || email.split('@')[0];
+    currentUser = { id: data.user.id, email: data.user.email, name: uname, access_token: data.access_token };
+    updateAvatarUI();
+    closeModal('authModal');
+    toast(`Chào mừng, ${uname}! 👋`, 'success');
+  } catch(e) {
+    errEl.textContent = e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = authMode === 'login' ? 'Đăng nhập' : 'Đăng ký';
+}
+
+function handleLogout() {
+  currentUser = null;
+  localStorage.removeItem('loen_session');
+  updateAvatarUI();
+  closeModal('authModal');
+  toast('Đã đăng xuất!', 'info');
+}
+
+/* ═══ LEADERBOARD ═══ */
+async function loadLeaderboard() {
+  const list = document.getElementById('lbList');
+  list.innerHTML = '<div class="lb-empty">Đang tải...</div>';
+  try {
+    // Get top users by number of completed quizzes (distinct quiz count per user)
+    const data = await supa('GET', 'results?order=created_at.desc&limit=500');
+    if (!data || !data.length) {
+      list.innerHTML = '<div class="lb-empty">Chưa có kết quả nào. Hãy làm bài và lưu kết quả! 🎯</div>';
+      return;
+    }
+    // Aggregate by user_id: count total completed quizzes
+    const userMap = {};
+    for (const r of data) {
+      const uid = r.user_id || r.user_name;
+      if (!uid) continue;
+      if (!userMap[uid]) userMap[uid] = { name: r.user_name || 'Ẩn danh', completed: 0, totalPct: 0, count: 0 };
+      userMap[uid].completed++;
+      userMap[uid].totalPct += r.pct || 0;
+      userMap[uid].count++;
+    }
+    const sorted = Object.values(userMap)
+      .map(u => ({ name: u.name, completed: u.completed, avgPct: u.count ? Math.round(u.totalPct / u.count) : 0 }))
+      .sort((a, b) => b.completed - a.completed || b.avgPct - a.avgPct);
+
+    const medals = ['🥇', '🥈', '🥉'];
+    list.innerHTML = sorted.slice(0, 20).map((u, i) => {
+      const rankClass = i < 3 ? `r${i+1}` : 'rn';
+      const rankText = i < 3 ? medals[i] : `#${i+1}`;
+      const letter = u.name.charAt(0).toUpperCase();
+      return `<div class="lb-row">
+        <div class="lb-rank ${rankClass}">${rankText}</div>
+        <div class="lb-avatar">${letter}</div>
+        <div class="lb-info">
+          <div class="lb-name">${u.name}</div>
+          <div class="lb-meta">Điểm TB: ${u.avgPct}%</div>
+        </div>
+        <div class="lb-score">${u.completed}<span>đề hoàn thành</span></div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="lb-empty">Lỗi tải dữ liệu: ' + e.message + '</div>';
+  }
+}
+
+
+async function saveQuizToLibrary() {
+  const raw = document.getElementById('quizInput').value.trim();
+  const title = document.getElementById('quizTitle').value.trim() || 'Quiz không tên';
+  if (!raw) { toast('Chưa có nội dung để lưu!', 'error'); return; }
+  const parsed = parseQuiz(raw);
+  if (!parsed.length) { toast('Không thể phân tích câu hỏi!', 'error'); return; }
+  const btn = document.getElementById('saveLibBtn');
+  btn.disabled = true; btn.textContent = 'Đang lưu...';
+  try {
+    const notes = document.getElementById('quizNotes').value.trim();
+    await supa('POST', 'quizzes', { title, content: raw, question_count: parsed.length, notes });
+    toast('Đã lưu vào thư viện! 📚', 'success');
+  } catch(e) {
+    toast('Lỗi khi lưu: ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.innerHTML = '<i data-lucide="bookmark" style="width:14px;height:14px;"></i> Lưu vào thư viện';
+  lucide.createIcons();
+}
+
+/* ═══ TẢI THƯ VIỆN ═══ */
+/* ══ LIB STATE ══ */
+let currentLibTab = 'collections';
+let currentColId = null;
+let allQuizzes = []; // cache for picker
+
+function switchLibTab(tab) {
+  currentLibTab = tab;
+  document.getElementById('libQuizzesPane').style.display = tab === 'quizzes' ? 'block' : 'none';
+  document.getElementById('libCollectionsPane').style.display = tab === 'collections' ? 'block' : 'none';
+  document.getElementById('tabQuizzes').classList.toggle('active', tab === 'quizzes');
+  document.getElementById('tabCollections').classList.toggle('active', tab === 'collections');
+  document.getElementById('libAddLabel').textContent = 'Tạo bộ đề';
+  if (tab === 'collections') loadCollections();
+  else loadLibrary();
+}
+
+function libAddAction() {
+  openModal('newColModal');
+  setTimeout(() => document.getElementById('newColName').focus(), 100);
+}
+
+async function loadLibrary() {
+  const grid = document.getElementById('libGrid');
+  grid.innerHTML = '<div class="lib-empty">Đang tải...</div>';
+  try {
+    const data = await supa('GET', 'quizzes?order=created_at.desc&limit=100');
+    allQuizzes = data;
+    if (!data.length) {
+      grid.innerHTML = '<div class="lib-empty">Chưa có đề thi nào. Hãy tạo và lưu đề đầu tiên! 📝</div>';
+      return;
+    }
+    grid.innerHTML = data.map(q => {
+      const d = new Date(q.created_at);
+      return `<div class="lib-card">
+        <div class="lib-card-title">${q.title}</div>
+        <div class="lib-card-meta">${q.question_count} câu · ${d.toLocaleDateString('vi-VN')}</div>
+        <div class="lib-card-actions">
+          <button class="lib-btn" onclick="loadQuizFromLibrary('${q.id}')">▶ Làm bài</button>
+          <button class="lib-btn del" onclick="deleteQuiz('${q.id}')">🗑 Xóa</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="lib-empty">Lỗi kết nối Supabase.</div>';
+  }
+}
+
+/* ══ COLLECTIONS ══ */
+async function loadCollections() {
+  const grid = document.getElementById('colGrid');
+  grid.innerHTML = '<div class="lib-empty">Đang tải...</div>';
+  try {
+    const data = await supa('GET', 'collections?order=created_at.desc');
+    if (!data.length) {
+      grid.innerHTML = '<div class="lib-empty">Chưa có bộ đề nào. Bấm "+ Tạo bộ đề" để bắt đầu! 📚</div>';
+      return;
+    }
+    grid.innerHTML = data.map(c => {
+      const count = (c.quiz_ids || []).length;
+      const d = new Date(c.created_at);
+      return `<div class="lib-card" style="cursor:pointer;" onclick="openCollection('${c.id}')">
+        <div style="font-size:1.6rem;">📚</div>
+        <div class="lib-card-title">${c.name}</div>
+        <div class="lib-card-meta">${count} đề · ${d.toLocaleDateString('vi-VN')}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="lib-empty">Lỗi kết nối.</div>';
+  }
+}
+
+async function createCollection() {
+  const name = document.getElementById('newColName').value.trim();
+  if (!name) { toast('Nhập tên bộ đề!', 'error'); return; }
+  try {
+    await supa('POST', 'collections', { name, quiz_ids: [] });
+    toast('Đã tạo bộ đề "' + name + '"!', 'success');
+    document.getElementById('newColName').value = '';
+    closeModal('newColModal');
+    switchLibTab('collections');
+  } catch(e) {
+    toast('Lỗi tạo bộ đề!', 'error');
+  }
+}
+
+async function openCollection(id) {
+  currentColId = id;
+  showScreen('colDetailScreen');
+  const data = await supa('GET', 'collections?id=eq.' + id);
+  const col = data[0];
+  document.getElementById('colDetailTitle').textContent = col.name;
+  document.getElementById('colDetailMeta').textContent = (col.quiz_ids||[]).length + ' đề thi';
+  await renderColDetail(col.quiz_ids || []);
+}
+
+async function renderColDetail(quizIds) {
+  const grid = document.getElementById('colDetailGrid');
+  if (!quizIds.length) {
+    grid.innerHTML = '<div class="lib-empty">Bộ đề trống. Bấm "+ Thêm đề" để thêm vào!</div>';
+    return;
+  }
+  grid.innerHTML = '<div class="lib-empty">Đang tải...</div>';
+  try {
+    const ids = quizIds.join(',');
+    const data = await supa('GET', 'quizzes?id=in.(' + ids + ')');
+    // Sort by quizIds order
+    const sorted = quizIds.map(id => data.find(q => q.id === id)).filter(Boolean);
+    grid.innerHTML = sorted.map((q, idx) => `
+      <div class="lib-card">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:28px;height:28px;background:var(--accent-glow);color:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">${idx+1}</div>
+          <div class="lib-card-title" style="margin:0;">${q.title}</div>
+        </div>
+        <div class="lib-card-meta">${q.question_count} câu</div>
+        <div class="lib-card-actions">
+          <button class="lib-btn" onclick="loadQuizFromLibrary('${q.id}')">▶ Làm bài</button>
+          <button class="lib-btn del" onclick="removeFromCollection('${q.id}')">✕ Bỏ</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="lib-empty">Lỗi tải đề.</div>';
+  }
+}
+
+async function openAddToCollection() {
+  if (!allQuizzes.length) await loadLibrary();
+  const col = (await supa('GET', 'collections?id=eq.' + currentColId))[0];
+  const existing = col.quiz_ids || [];
+  document.getElementById('quizPickList').innerHTML = allQuizzes.map(q => `
+    <div class="quiz-pick-item ${existing.includes(q.id) ? 'selected' : ''}" onclick="togglePickQuiz(this,'${q.id}')" data-id="${q.id}">
+      <div class="quiz-pick-check">${existing.includes(q.id) ? '✓' : ''}</div>
+      <div class="quiz-pick-info">
+        <div class="quiz-pick-title">${q.title}</div>
+        <div class="quiz-pick-meta">${q.question_count} câu</div>
+      </div>
+    </div>`).join('');
+  openModal('addToColModal');
+}
+
+function togglePickQuiz(el, id) {
+  el.classList.toggle('selected');
+  const check = el.querySelector('.quiz-pick-check');
+  check.textContent = el.classList.contains('selected') ? '✓' : '';
+}
+
+async function saveAddToCollection() {
+  const selected = [...document.querySelectorAll('.quiz-pick-item.selected')].map(el => el.dataset.id);
+  try {
+    await supa('PATCH', 'collections?id=eq.' + currentColId, { quiz_ids: selected });
+    toast('Đã cập nhật bộ đề!', 'success');
+    closeModal('addToColModal');
+    openCollection(currentColId);
+  } catch(e) {
+    toast('Lỗi lưu!', 'error');
+  }
+}
+
+async function removeFromCollection(quizId) {
+  const col = (await supa('GET', 'collections?id=eq.' + currentColId))[0];
+  const newIds = (col.quiz_ids || []).filter(id => id !== quizId);
+  await supa('PATCH', 'collections?id=eq.' + currentColId, { quiz_ids: newIds });
+  openCollection(currentColId);
+}
+
+async function deleteCollection(id) {
+  if (!confirm('Xóa bộ đề này?')) return;
+  await supa('DELETE', 'collections?id=eq.' + id);
+  toast('Đã xóa bộ đề!', 'success');
+  showAppScreen('libraryScreen');
+  switchLibTab('collections');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function loadQuizFromLibrary(id) {
+  try {
+    const data = await supa('GET', 'quizzes?id=eq.' + id);
+    const q = data[0];
+    document.getElementById('quizTitle').value = q.title;
+    document.getElementById('quizInput').value = q.content;
+    document.getElementById('quizNotes').value = q.notes || '';
+    currentTitle = q.title;
+    currentNotes = q.notes || '';
+    const raw = q.content;
+    const parsed = parseQuiz(raw);
+    if (!parsed.length) { toast('Không thể phân tích câu hỏi!', 'error'); return; }
+    const doShuffle = false;
+    questions = parsed;
+    answers = {}; flags = {}; current = 0;
+    mode = 'normal';
+    totalTime = 0;
+    document.getElementById('qtTitle').textContent = currentTitle;
+    showScreen('quizScreen');
+    renderNav();
+    renderQ();
+    startTimer();
+  } catch(e) {
+    toast('Không tải được đề thi!', 'error');
+  }
+}
+
+async function deleteQuiz(id) {
+  if (!confirm('Xóa đề thi này?')) return;
+  try {
+    await supa('DELETE', 'quizzes?id=eq.' + id);
+    toast('Đã xóa!', 'success');
+    loadLibrary();
+  } catch(e) {
+    toast('Lỗi khi xóa!', 'error');
+  }
+}
+
+/* ═══ FILE UPLOAD ═══ */
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const nameNoExt = file.name.replace(/\.[^.]+$/, '');
+
+  if (ext === 'txt') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('quizInput').value = e.target.result;
+      if (!document.getElementById('quizTitle').value) document.getElementById('quizTitle').value = nameNoExt;
+      toast('Đã tải file!', 'success');
+    };
+    reader.readAsText(file, 'UTF-8');
+
+  } else if (ext === 'docx') {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try {
+        const result = await mammoth.extractRawText({ arrayBuffer: e.target.result });
+        document.getElementById('quizInput').value = result.value;
+        if (!document.getElementById('quizTitle').value) document.getElementById('quizTitle').value = nameNoExt;
+        toast('Đã tải file Word!', 'success');
+      } catch(err) {
+        toast('Lỗi đọc .docx: ' + err.message, 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+
+  } else {
+    toast('Chỉ hỗ trợ .txt và .docx!', 'error');
+  }
+  event.target.value = '';
+}
+
+/* ═══ TTS ═══ */
+function speakText(text) {
+  if (!window.speechSynthesis) { toast('Trình duyệt không hỗ trợ TTS!', 'error'); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'en-US';
+  utter.rate = 0.9;
+  window.speechSynthesis.speak(utter);
+}
+
+/* ═══ INIT ═══ */
+lucide.createIcons();
+initAuth();
+</script>
+</body>
+</html>
