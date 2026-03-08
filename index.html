@@ -760,6 +760,26 @@ select option{background:var(--surface2);}
 .lb-score span { display: block; font-size: 0.7rem; font-weight: 500; color: var(--text2); }
 .lb-empty { text-align: center; padding: 48px; color: var(--text2); font-size: 0.9rem; }
 
+/* ══ MODE CARD ══ */
+.mode-card {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 18px;
+  border: 2px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: all 0.18s;
+  background: var(--surface2);
+}
+.mode-card:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  transform: translateY(-2px);
+  box-shadow: var(--sh);
+}
+.mode-icon { font-size: 1.8rem; flex-shrink: 0; }
+.mode-title { font-weight: 700; font-size: 0.95rem; color: var(--text); margin-bottom: 3px; }
+.mode-desc { font-size: 0.78rem; color: var(--text2); line-height: 1.4; }
+
 /* ══ ANIMS ══ */
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -905,13 +925,6 @@ select option{background:var(--surface2);}
               <option value="30">30 phút</option>
               <option value="45">45 phút</option>
               <option value="60">60 phút</option>
-            </select>
-          </div>
-          <div>
-            <label>Chế độ chấm</label>
-            <select id="quizMode">
-              <option value="normal">Nộp bài mới chấm</option>
-              <option value="instant">Chấm ngay từng câu</option>
             </select>
           </div>
         </div>
@@ -1124,6 +1137,30 @@ select option{background:var(--surface2);}
 
 
 
+<!-- ═══ MODAL: CHỌN CHẾ ĐỘ CHẤM ═══ -->
+<div class="modal-overlay" id="modeModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title" style="text-align:center;font-size:1.25rem;">⚡ Chọn chế độ làm bài</div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
+      <div class="mode-card" onclick="launchQuiz('normal')">
+        <div>
+          <div class="mode-title">Nộp bài mới chấm</div>
+          <div class="mode-desc">Làm hết tất cả câu rồi nộp, xem kết quả một lần</div>
+        </div>
+      </div>
+      <div class="mode-card" onclick="launchQuiz('instant')">
+        <div>
+          <div class="mode-title">Chấm ngay từng câu</div>
+          <div class="mode-desc">Biết đúng sai ngay sau mỗi câu trả lời</div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modeModal')">Huỷ</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1226,6 +1263,8 @@ function shuffleArray(arr) {
 }
 
 /* ═══ START ═══ */
+let _pendingParsed = [];
+
 function startQuiz() {
   const raw = document.getElementById('quizInput').value.trim();
   currentTitle = document.getElementById('quizTitle').value.trim() || 'Quiz không tên';
@@ -1239,10 +1278,15 @@ function startQuiz() {
   }
 
   const doShuffle = document.getElementById('shuffleOpt').checked;
-  questions = doShuffle ? shuffleArray([...parsed]) : parsed;
+  _pendingParsed = doShuffle ? shuffleArray([...parsed]) : parsed;
+  openModal('modeModal');
+}
 
+function launchQuiz(selectedMode) {
+  closeModal('modeModal');
+  questions = _pendingParsed;
   answers = {}; flags = {}; current = 0;
-  mode = document.getElementById('quizMode').value;
+  mode = selectedMode;
   totalTime = parseInt(document.getElementById('timeLimit').value) * 60;
 
   document.getElementById('qtTitle').textContent = currentTitle;
@@ -1951,15 +1995,11 @@ async function loadQuizFromLibrary(id) {
     const parsed = parseQuiz(raw);
     if (!parsed.length) { toast('Không thể phân tích câu hỏi!', 'error'); return; }
     const doShuffle = false;
-    questions = parsed;
-    answers = {}; flags = {}; current = 0;
-    mode = 'normal';
-    totalTime = 0;
-    document.getElementById('qtTitle').textContent = currentTitle;
-    showScreen('quizScreen');
-    renderNav();
-    renderQ();
-    startTimer();
+    _pendingParsed = parsed;
+    currentTitle = q.title;
+    currentNotes = q.notes || '';
+    totalTime = 0; // reset, will be set in launchQuiz
+    openModal('modeModal');
   } catch(e) {
     toast('Không tải được đề thi!', 'error');
   }
