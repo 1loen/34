@@ -1136,54 +1136,82 @@ let currentNotes = '';
 let lastResult = null; // store for re-take
 
 /* ═══ PARSE ═══ */
-function normalizeRaw(raw) {
-  let s = raw;
-  s = s.replace(/(C[aâ]u\s*\d+|Question\s*\d+|\d+[\.\)]\s*(?=[A-ZĐÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ]))/gi, '\n$1');
-  s = s.replace(/([a-zắặẵằẳâầấậẩẫăắặẳẵàáạảãđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ\d\?\.\!\$\)])([A-D])[\.\)]\s/g, '$1\n$2. ');
-  s = s.replace(/(Đáp\s*án|Dap\s*an|Answer)/gi, '\n$1');
-  return s;
-}
-
 function parseQuiz(raw) {
   const qs = [];
-  const normalized = normalizeRaw(raw);
-  const blocks = ('\n' + normalized).split(/\n(?=(?:c[aâ]u\s*\d+|question\s*\d+|\d+[\.\)]\s*\S))/i)
-    .map(b => b.trim()).filter(Boolean);
+
+  // ── Bước 1: chuẩn hóa line endings & trim
+  let s = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // ── Bước 2: tách thành các block câu hỏi
+  // Hỗ trợ: "Câu 1", "Câu 1:", "1.", "1)", "Question 1", "1 -"
+  const blockRe = /(?:^|\n)(?=(?:c[aâ]u\s*\d+|question\s*\d+|\d+\s*[\.\)\-\:]\s*\S))/i;
+  let blocks = s.split(blockRe).map(b => b.trim()).filter(Boolean);
+
+  // fallback: nếu không tách được block, thử tách bằng dòng trống
+  if (blocks.length <= 1) {
+    blocks = s.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+  }
 
   for (const block of blocks) {
-    const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
-    if (!lines.length) continue;
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 3) continue;
 
-    let qLine = lines[0].replace(/^(?:c[aâ]u\s*\d+\s*[:\.\-\)>]?\s*|question\s*\d+\s*[:\.\-\)>]?\s*|\d+[\.\)\-]\s*)/i, '').trim();
-    if (!qLine && lines[1] && !/^[A-Da-d][\.\)]/.test(lines[1])) {
-      qLine = lines[1];
-      lines.splice(1, 1);
+    // ── Bước 3: lấy dòng câu hỏi (dòng đầu, bỏ prefix số)
+    let qLine = lines[0]
+      .replace(/^c[aâ]u\s*\d+\s*[:\.\-\)>]?\s*/i, '')
+      .replace(/^question\s*\d+\s*[:\.\-\)>]?\s*/i, '')
+      .replace(/^\d+\s*[\.\)\-\:]\s*/, '')
+      .trim();
+
+    // nếu dòng đầu chỉ là số/prefix, câu hỏi nằm ở dòng 2
+    if (!qLine && lines[1] && !/^[A-Da-d]\s*[\.\)]/i.test(lines[1])) {
+      qLine = lines[1].trim();
     }
     if (!qLine) continue;
 
+    // ── Bước 4: parse đáp án & options từ các dòng còn lại
     const opts = {};
     let answer = '';
 
     for (let i = 1; i < lines.length; i++) {
       const l = lines[i];
-      const ansMatch = l.match(/^(?:\u0111\u00e1p\s*\u00e1n\s*(?:\u0111\u00fang\s*)?|dap\s*an\s*(?:dung\s*)?|answer\s*(?:key\s*)?)\s*[:\.]?\s*([A-Da-d])/i);
+
+      // Đáp án đúng: "Đáp án: A", "Đáp án đúng: B", "Answer: C", "ĐA: D", "DA: A"
+      const ansRe = /^(?:đáp\s*án\s*(?:đúng\s*)?|dap\s*an\s*(?:dung\s*)?|answer\s*(?:key\s*)?|đa\s*[:\.]?\s*|da\s*[:\.]?\s*)[:\.]?\s*([A-Da-d])/i;
+      const ansMatch = l.match(ansRe);
       if (ansMatch) { answer = ansMatch[1].toUpperCase(); continue; }
-      const optMatch = l.match(/^([A-Da-d])[\.\)]\s*(.+)/);
-      if (optMatch) { opts[optMatch[1].toUpperCase()] = optMatch[2].trim(); continue; }
+
+      // Option: "A. ...", "A) ...", "A - ...", "A: ..."  (kể cả chữ thường a,b,c,d)
+      const optRe = /^([A-Da-d])\s*[\.\)\-\:]\s*(.+)/;
+      const optMatch = l.match(optRe);
+      if (optMatch) {
+        const key = optMatch[1].toUpperCase();
+        const val = optMatch[2].trim();
+        // Đáp án đúng được đánh dấu bằng * ✓ ✔ (đúng) (correct)
+        if (/[*✓✔]|\(đúng\)|\(correct\)/i.test(val)) {
+          answer = answer || key;
+          opts[key] = val.replace(/\s*[*✓✔]|\s*\(đúng\)|\s*\(correct\)/gi, '').trim();
+        } else {
+          opts[key] = val;
+        }
+        continue;
+      }
+
+      // Câu hỏi nhiều dòng: nối thêm vào qLine nếu chưa có option nào
+      if (Object.keys(opts).length === 0 && !/^đáp/i.test(l)) {
+        qLine += ' ' + l;
+      }
     }
 
-    if (!answer) {
-      for (const [key, val] of Object.entries(opts)) {
-        if (/[*✓✔]|\(đúng\)|\(correct\)/i.test(val)) {
-          answer = key;
-          opts[key] = val.replace(/\s*[*✓✔]|\s*\(đúng\)|\s*\(correct\)/gi, '').trim();
-          break;
-        }
+    // ── Bước 5: fallback — thử tìm đáp án từ dấu hiệu in đậm hoặc ALL CAPS
+    if (!answer && Object.keys(opts).length >= 2) {
+      for (const [k, v] of Object.entries(opts)) {
+        if (/^[A-Z\s\d]+$/.test(v) && v.length < 60) { /* không đủ dấu hiệu */ }
       }
     }
 
     if (qLine && Object.keys(opts).length >= 2 && answer) {
-      qs.push({ q: qLine, opts, answer });
+      qs.push({ q: qLine.trim(), opts, answer });
     }
   }
   return qs;
@@ -1206,7 +1234,7 @@ function startQuiz() {
 
   let parsed = parseQuiz(raw);
   if (!parsed.length) {
-    toast('Không thể phân tích câu hỏi. Kiểm tra lại định dạng!', 'error');
+    toast('Không đọc được! Cần có: câu hỏi → A. B. C. D. → Đáp án: X', 'error');
     return;
   }
 
