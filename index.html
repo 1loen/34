@@ -1115,11 +1115,7 @@ select option{background:var(--surface2);}
     <div class="res-title" id="resTitle">Xong!</div>
     <div class="res-sub" id="resSub"></div>
 
-    <div class="res-stats">
-      <div class="rs-box g"><div class="rs-val" id="rsCorrect">0</div><div class="rs-lbl">✅ Đúng</div></div>
-      <div class="rs-box r"><div class="rs-val" id="rsWrong">0</div><div class="rs-lbl">❌ Sai</div></div>
-      <div class="rs-box b"><div class="rs-val" id="rsSkip">0</div><div class="rs-lbl">⬜ Bỏ qua</div></div>
-    </div>
+
 
     <div id="resNotes" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:18px;text-align:left;">
       <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin-bottom:8px;">📝 Ghi chú</div>
@@ -1287,7 +1283,8 @@ function launchQuiz(selectedMode) {
   questions = _pendingParsed;
   answers = {}; flags = {}; current = 0;
   mode = selectedMode;
-  totalTime = parseInt(document.getElementById('timeLimit').value) * 60;
+  const timeLimitEl = document.getElementById('timeLimit');
+  totalTime = timeLimitEl ? parseInt(timeLimitEl.value) * 60 : 0;
 
   document.getElementById('qtTitle').textContent = currentTitle;
   showScreen('quizScreen');
@@ -1420,9 +1417,6 @@ function submitQuiz(timeout = false) {
   document.getElementById('scoreRing').style.setProperty('--p', pct);
   document.getElementById('scoreNum').textContent = correct;
   document.getElementById('scoreOf').textContent = `/${questions.length}`;
-  document.getElementById('rsCorrect').textContent = correct;
-  document.getElementById('rsWrong').textContent = wrong;
-  document.getElementById('rsSkip').textContent = skip;
 
   const e = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '💪' : '📚';
   const m = pct >= 90 ? 'Xuất sắc!' : pct >= 70 ? 'Làm tốt lắm!' : pct >= 50 ? 'Khá tốt!' : 'Cần cố gắng thêm!';
@@ -1483,13 +1477,9 @@ async function saveResultToSupabase(userName, correct, total, pct) {
 
 
 function retakeQuiz() {
-  answers = {}; flags = {}; current = 0;
   document.getElementById('reviewWrap').style.display = 'none';
-  showScreen('quizScreen');
-  renderNav();
-  renderQ();
-  startTimer();
-  lucide.createIcons();
+  _pendingParsed = questions;
+  openModal('modeModal');
 }
 
 /* ═══ REVIEW ═══ */
@@ -1986,19 +1976,12 @@ async function loadQuizFromLibrary(id) {
   try {
     const data = await supa('GET', 'quizzes?id=eq.' + id);
     const q = data[0];
-    document.getElementById('quizTitle').value = q.title;
-    document.getElementById('quizInput').value = q.content;
-    document.getElementById('quizNotes').value = q.notes || '';
     currentTitle = q.title;
     currentNotes = q.notes || '';
-    const raw = q.content;
-    const parsed = parseQuiz(raw);
+    const parsed = parseQuiz(q.content);
     if (!parsed.length) { toast('Không thể phân tích câu hỏi!', 'error'); return; }
-    const doShuffle = false;
     _pendingParsed = parsed;
-    currentTitle = q.title;
-    currentNotes = q.notes || '';
-    totalTime = 0; // reset, will be set in launchQuiz
+    totalTime = 0;
     openModal('modeModal');
   } catch(e) {
     toast('Không tải được đề thi!', 'error');
